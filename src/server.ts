@@ -184,6 +184,20 @@ async function processJob(job: JobState, uploadedFilePath: string): Promise<void
 }
 
 /**
+ * Fix multer filename encoding (Latin-1 -> UTF-8)
+ * Multer stores originalname as Latin-1 bytes, but browsers send UTF-8
+ */
+function fixFilenameEncoding(filename: string): string {
+  try {
+    // Convert Latin-1 string to UTF-8
+    const bytes = Buffer.from(filename, "latin1");
+    return bytes.toString("utf8");
+  } catch {
+    return filename;
+  }
+}
+
+/**
  * POST /api/upload
  * Upload a PDF or DOCX file and start processing
  */
@@ -194,7 +208,9 @@ app.post("/api/upload", upload.single("file"), (req: Request, res: Response) => 
   }
 
   const jobId = uuidv4();
-  const job = createJob(jobId, req.file.originalname);
+  // Fix filename encoding from Latin-1 to UTF-8
+  const originalName = fixFilenameEncoding(req.file.originalname);
+  const job = createJob(jobId, originalName);
 
   // Respond immediately with job ID
   res.json({ jobId });
@@ -270,7 +286,21 @@ app.get("/api/download/:jobId", (req: Request, res: Response) => {
   const baseName = path.basename(job.fileName, path.extname(job.fileName));
   const downloadName = `${baseName}-translated.docx`;
 
-  res.download(job.outputPath, downloadName);
+  // Properly encode filename for Content-Disposition header (RFC 5987)
+  // filename: ASCII fallback (replace non-ASCII with underscore)
+  // filename*: UTF-8 encoded version for modern browsers
+  const asciiFallback = downloadName.replace(/[^\x00-\x7F]/g, "_");
+  const encodedName = encodeURIComponent(downloadName).replace(/'/g, "%27");
+  res.setHeader(
+    "Content-Disposition",
+    `attachment; filename="${asciiFallback}"; filename*=UTF-8''${encodedName}`
+  );
+  res.setHeader(
+    "Content-Type",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  );
+
+  res.sendFile(job.outputPath);
 });
 
 // Error handling middleware

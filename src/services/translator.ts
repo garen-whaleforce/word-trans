@@ -320,6 +320,52 @@ export async function translateSegments(
 }
 
 /**
+ * Stricter check for QA - only flag segments that are MOSTLY English
+ * This is used after initial translation to avoid re-translating segments
+ * that just have some technical terms in English (which is expected)
+ */
+function needsRetranslation(text: string): boolean {
+  if (!text || text.trim().length === 0) return false;
+
+  // Skip list: terms that should remain in English
+  const skipTerms = [
+    // Standards
+    /\b(IEC|EN|UL|CSA|CB|ISO|IEEE|ANSI)\s*\d*[-\d]*/gi,
+    // PCB designators
+    /\b[A-Z]{1,2}\d+\b/g,
+    // Units and symbols
+    /\b(mm|cm|kg|Hz|kHz|MHz|GHz|mA|A|V|W|kW|MW|°C|°F)\b/gi,
+    // Common abbreviations that stay in English
+    /\b(AC|DC|USB|LED|LCD|PCB|IC|CPU|GPU|RAM|ROM|SSD|HDD|PDF|DOCX|RMS|EMC|EMI|ESD|RF|IO|I\/O)\b/gi,
+    // Model numbers, part numbers
+    /\b[A-Z]{2,}-?\d+[A-Z]?\b/g,
+  ];
+
+  // Remove skip terms from text for checking
+  let textToCheck = text;
+  for (const pattern of skipTerms) {
+    textToCheck = textToCheck.replace(pattern, "");
+  }
+
+  // Check if there are Chinese characters
+  const chineseChars = textToCheck.match(/[\u4e00-\u9fff]/g) || [];
+  const letterCount = (textToCheck.match(/[A-Za-z]/g) || []).length;
+
+  // If there are Chinese characters and they outnumber English letters, it's translated
+  if (chineseChars.length > 0 && chineseChars.length >= letterCount) {
+    return false;
+  }
+
+  // If > 60% of non-space chars are A-Z letters, needs retranslation
+  const nonSpaceCount = textToCheck.replace(/\s/g, "").length;
+  if (nonSpaceCount > 0 && letterCount / nonSpaceCount > 0.6) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * QA check and retranslate any remaining English segments
  */
 export async function qaAndRetranslate(
@@ -333,10 +379,11 @@ export async function qaAndRetranslate(
     progress: 80,
   });
 
-  // Find segments that still look like English
+  // Find segments that still look like English (using stricter criteria)
   const pending = segments.filter((seg) => {
-    const textToCheck = seg.translated ?? seg.text;
-    return looksLikeEnglish(textToCheck);
+    // Only check segments that were translated
+    if (!seg.translated) return false;
+    return needsRetranslation(seg.translated);
   });
 
   if (pending.length === 0) {

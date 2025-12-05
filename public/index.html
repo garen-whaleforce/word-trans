@@ -11,7 +11,7 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      max-width: 700px;
+      max-width: 900px;
       margin: 0 auto;
       padding: 40px 20px;
       background: #f5f5f5;
@@ -80,36 +80,108 @@
       cursor: not-allowed;
     }
 
-    #stopBtn {
+    #stopAllBtn {
       background: #e74c3c;
       color: white;
       display: none;
     }
 
-    #stopBtn:hover:not(:disabled) {
+    #stopAllBtn:hover:not(:disabled) {
       background: #c0392b;
     }
 
-    #stopBtn:disabled {
-      background: #bdc3c7;
-      cursor: not-allowed;
+    #downloadAllBtn {
+      background: #2ecc71;
+      color: white;
+      display: none;
+      margin-left: 10px;
     }
 
-    .progress-container {
+    #downloadAllBtn:hover:not(:disabled) {
+      background: #27ae60;
+    }
+
+    .jobs-container {
+      display: none;
+    }
+
+    .job-card {
       background: white;
       border-radius: 12px;
-      padding: 30px;
+      padding: 20px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-      display: none;
+      margin-bottom: 15px;
+      border-left: 4px solid #3498db;
+    }
+
+    .job-card.done {
+      border-left-color: #2ecc71;
+    }
+
+    .job-card.error {
+      border-left-color: #e74c3c;
+    }
+
+    .job-card.cancelled {
+      border-left-color: #f39c12;
+    }
+
+    .job-card.queued {
+      border-left-color: #95a5a6;
+      opacity: 0.7;
+    }
+
+    .job-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .job-filename {
+      font-weight: 600;
+      color: #2c3e50;
+      font-size: 15px;
+      word-break: break-all;
+      flex: 1;
+      margin-right: 10px;
+    }
+
+    .job-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .job-actions button {
+      padding: 6px 12px;
+      font-size: 13px;
+    }
+
+    .stop-btn {
+      background: #e74c3c;
+      color: white;
+    }
+
+    .stop-btn:hover:not(:disabled) {
+      background: #c0392b;
+    }
+
+    .download-btn {
+      background: #2ecc71;
+      color: white;
+    }
+
+    .download-btn:hover {
+      background: #27ae60;
     }
 
     .progress-bar-outer {
       background: #ecf0f1;
       border-radius: 10px;
-      height: 24px;
+      height: 20px;
       overflow: hidden;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
 
     .progress-bar-inner {
@@ -120,95 +192,89 @@
       border-radius: 10px;
     }
 
-    .progress-text {
+    .job-info {
       display: flex;
       justify-content: space-between;
       color: #7f8c8d;
-      font-size: 14px;
+      font-size: 13px;
     }
 
-    .status-message {
-      margin-top: 15px;
-      padding: 15px;
+    .job-status {
+      font-weight: 500;
+    }
+
+    .job-usage {
+      margin-top: 10px;
+      padding: 10px;
       background: #f8f9fa;
       border-radius: 8px;
-      font-size: 14px;
-    }
-
-    .status-label {
-      font-weight: 600;
-      color: #2c3e50;
-    }
-
-    .result-container {
-      background: white;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      font-size: 12px;
       display: none;
     }
 
-    .result-success {
-      border-left: 4px solid #2ecc71;
+    .job-usage.show {
+      display: block;
     }
 
-    .result-error {
-      border-left: 4px solid #e74c3c;
+    .usage-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
     }
 
-    .result-cancelled {
-      border-left: 4px solid #f39c12;
+    .usage-item {
+      text-align: center;
     }
 
-    .download-link {
-      display: inline-block;
-      padding: 15px 30px;
-      background: #2ecc71;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 500;
-      margin: 15px 0;
+    .usage-label {
+      color: #7f8c8d;
+      font-size: 11px;
     }
 
-    .download-link:hover {
-      background: #27ae60;
-    }
-
-    .usage-info {
-      margin-top: 20px;
-      padding: 15px;
-      background: #f8f9fa;
-      border-radius: 8px;
-      font-size: 14px;
-    }
-
-    .usage-info h4 {
-      margin: 0 0 10px 0;
-      color: #2c3e50;
-    }
-
-    .usage-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 5px 0;
-      border-bottom: 1px solid #eee;
-    }
-
-    .usage-row:last-child {
-      border-bottom: none;
+    .usage-value {
       font-weight: 600;
       color: #2c3e50;
     }
 
-    .error-message {
-      color: #e74c3c;
-      font-weight: 500;
+    .summary-bar {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      display: none;
     }
 
-    .cancelled-message {
-      color: #f39c12;
-      font-weight: 500;
+    .summary-stats {
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+    }
+
+    .stat-item {
+      padding: 0 20px;
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #7f8c8d;
+      margin-top: 4px;
+    }
+
+    .stat-value.success { color: #2ecc71; }
+    .stat-value.error { color: #e74c3c; }
+    .stat-value.processing { color: #3498db; }
+
+    .error-text {
+      color: #e74c3c;
+      font-size: 12px;
+      margin-top: 5px;
     }
   </style>
 </head>
@@ -218,48 +284,58 @@
 
   <div class="upload-area">
     <div class="file-input-wrapper">
-      <input type="file" id="fileInput" accept=".pdf,.docx">
+      <input type="file" id="fileInput" accept=".pdf,.docx" multiple>
       <button id="uploadBtn">上傳並翻譯</button>
-      <button id="stopBtn">停止</button>
+      <button id="stopAllBtn">全部停止</button>
+      <button id="downloadAllBtn">全部下載</button>
     </div>
-    <p style="color: #7f8c8d; font-size: 14px; margin: 0;">支援格式：PDF、DOCX（最大 50MB）</p>
+    <p style="color: #7f8c8d; font-size: 14px; margin: 0;">支援格式：PDF、DOCX（最大 50MB），可選擇多個檔案（依序處理）</p>
   </div>
 
-  <div class="progress-container" id="progressContainer">
-    <div class="progress-bar-outer">
-      <div class="progress-bar-inner" id="progressBar"></div>
-    </div>
-    <div class="progress-text">
-      <span id="progressPercent">0%</span>
-      <span id="elapsedTime">已耗時：0 秒</span>
-    </div>
-    <div class="status-message">
-      <span class="status-label">狀態：</span>
-      <span id="statusText">準備中...</span>
+  <div class="summary-bar" id="summaryBar">
+    <div class="summary-stats">
+      <div class="stat-item">
+        <div class="stat-value" id="totalCount">0</div>
+        <div class="stat-label">總檔案</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value processing" id="processingCount">0</div>
+        <div class="stat-label">處理中</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value success" id="successCount">0</div>
+        <div class="stat-label">完成</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value error" id="errorCount">0</div>
+        <div class="stat-label">失敗</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value" id="totalCost">$0.00</div>
+        <div class="stat-label">總費用 (USD)</div>
+      </div>
     </div>
   </div>
 
-  <div class="result-container" id="resultContainer">
-    <div id="resultContent"></div>
-  </div>
+  <div class="jobs-container" id="jobsContainer"></div>
 
   <script>
     const fileInput = document.getElementById('fileInput');
     const uploadBtn = document.getElementById('uploadBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const progressContainer = document.getElementById('progressContainer');
-    const progressBar = document.getElementById('progressBar');
-    const progressPercent = document.getElementById('progressPercent');
-    const elapsedTime = document.getElementById('elapsedTime');
-    const statusText = document.getElementById('statusText');
-    const resultContainer = document.getElementById('resultContainer');
-    const resultContent = document.getElementById('resultContent');
+    const stopAllBtn = document.getElementById('stopAllBtn');
+    const downloadAllBtn = document.getElementById('downloadAllBtn');
+    const jobsContainer = document.getElementById('jobsContainer');
+    const summaryBar = document.getElementById('summaryBar');
 
-    let currentJobId = null;
+    // Track all jobs
+    const jobs = new Map(); // jobId -> { file, status, element }
     let pollingInterval = null;
+    let fileQueue = []; // Queue for sequential processing
+    let isProcessing = false;
 
     // Status message mapping
     const statusMessages = {
+      'queued': '排隊中',
       'uploading': '上傳中',
       'converting': 'PDF 轉換中',
       'parsing-docx': '解析文件中',
@@ -273,176 +349,375 @@
     };
 
     uploadBtn.addEventListener('click', async () => {
-      const file = fileInput.files[0];
-      if (!file) {
+      const files = fileInput.files;
+      if (!files || files.length === 0) {
         alert('請先選擇檔案');
         return;
       }
 
-      // Reset UI
-      progressContainer.style.display = 'block';
-      resultContainer.style.display = 'none';
-      resultContainer.className = 'result-container';
-      progressBar.style.width = '0%';
-      progressPercent.textContent = '0%';
-      statusText.textContent = '上傳中...';
-      uploadBtn.disabled = true;
-      stopBtn.style.display = 'inline-block';
-      stopBtn.disabled = false;
+      // Show containers
+      jobsContainer.style.display = 'block';
+      summaryBar.style.display = 'block';
+      stopAllBtn.style.display = 'inline-block';
 
-      try {
-        // Upload file with progress tracking
+      // Add files to queue and create cards
+      for (const file of files) {
+        const tempId = 'queued-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        const card = createJobCard(tempId, file.name);
+        jobsContainer.appendChild(card);
+
+        jobs.set(tempId, {
+          file: file,
+          status: 'queued',
+          element: card,
+          fileName: file.name
+        });
+
+        fileQueue.push({ file, tempId, card });
+        updateJobCard(tempId, { status: 'queued', stepMessage: '排隊中...' });
+      }
+
+      updateSummary();
+
+      // Start processing queue if not already running
+      if (!isProcessing) {
+        processQueue();
+      }
+
+      // Start polling
+      if (!pollingInterval) {
+        startPolling();
+      }
+
+      // Clear file input for next batch
+      fileInput.value = '';
+    });
+
+    stopAllBtn.addEventListener('click', async () => {
+      // Clear the queue
+      for (const item of fileQueue) {
+        const job = jobs.get(item.tempId);
+        if (job && job.status === 'queued') {
+          job.status = 'cancelled';
+          updateJobCard(item.tempId, { status: 'cancelled', stepMessage: '已取消' });
+        }
+      }
+      fileQueue = [];
+
+      // Stop active jobs
+      for (const [jobId, job] of jobs) {
+        if (!['done', 'error', 'cancelled', 'queued'].includes(job.status)) {
+          try {
+            await fetch(`/api/stop/${jobId}`, { method: 'POST' });
+          } catch (e) {
+            console.error('Failed to stop job:', jobId, e);
+          }
+        }
+      }
+      updateSummary();
+    });
+
+    downloadAllBtn.addEventListener('click', () => {
+      const completedJobs = Array.from(jobs.entries())
+        .filter(([_, job]) => job.status === 'done' && job.downloadable);
+
+      // Download each file with small delay to avoid browser blocking
+      completedJobs.forEach(([jobId, _], index) => {
+        setTimeout(() => {
+          const link = document.createElement('a');
+          link.href = `/api/download/${jobId}`;
+          link.download = '';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }, index * 500);
+      });
+    });
+
+    // Process queue one file at a time
+    async function processQueue() {
+      if (isProcessing || fileQueue.length === 0) {
+        return;
+      }
+
+      isProcessing = true;
+      uploadBtn.disabled = true;
+
+      while (fileQueue.length > 0) {
+        const { file, tempId, card } = fileQueue.shift();
+        const job = jobs.get(tempId);
+
+        // Skip if cancelled
+        if (!job || job.status === 'cancelled') {
+          continue;
+        }
+
+        // Upload and wait for completion
+        await uploadFileAndWait(file, tempId, card);
+      }
+
+      isProcessing = false;
+      checkAllDone();
+    }
+
+    // Upload a single file and wait for it to complete
+    function uploadFileAndWait(file, tempId, card) {
+      return new Promise((resolve) => {
+        const job = jobs.get(tempId);
+        job.status = 'uploading';
+        updateJobCard(tempId, { stepMessage: '上傳中...' });
+        updateSummary();
+
         const formData = new FormData();
         formData.append('file', file);
 
         const xhr = new XMLHttpRequest();
+        let realJobId = null;
 
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) {
-            // Upload progress is 0-10%
             const percent = Math.round((e.loaded / e.total) * 10);
-            progressBar.style.width = percent + '%';
-            progressPercent.textContent = percent + '%';
+            updateJobCard(tempId, { progress: percent, stepMessage: '上傳中...' });
           }
         };
 
         xhr.onload = () => {
           if (xhr.status === 200) {
             const response = JSON.parse(xhr.responseText);
-            currentJobId = response.jobId;
-            startPolling();
+            realJobId = response.jobId;
+
+            // Transfer job from temp ID to real ID
+            const job = jobs.get(tempId);
+            jobs.delete(tempId);
+            job.status = 'processing';
+            job.realJobId = realJobId;
+            jobs.set(realJobId, job);
+
+            // Update card's data-job-id
+            card.dataset.jobId = realJobId;
+            card.querySelector('.stop-btn').onclick = () => stopJob(realJobId);
+
+            updateSummary();
+
+            // Poll until this job is done
+            waitForJobCompletion(realJobId).then(resolve);
           } else {
-            showError('上傳失敗：' + xhr.statusText);
+            job.status = 'error';
+            updateJobCard(tempId, {
+              status: 'error',
+              errorMessage: '上傳失敗：' + xhr.statusText
+            });
+            updateSummary();
+            resolve();
           }
         };
 
         xhr.onerror = () => {
-          showError('網路錯誤，請重試');
+          job.status = 'error';
+          updateJobCard(tempId, {
+            status: 'error',
+            errorMessage: '網路錯誤'
+          });
+          updateSummary();
+          resolve();
         };
 
         xhr.open('POST', '/api/upload');
         xhr.send(formData);
+      });
+    }
 
-      } catch (error) {
-        showError('上傳失敗：' + error.message);
-      }
-    });
+    // Wait for a specific job to complete
+    function waitForJobCompletion(jobId) {
+      return new Promise((resolve) => {
+        const checkInterval = setInterval(async () => {
+          try {
+            const response = await fetch(`/api/status/${jobId}`);
+            const status = await response.json();
 
-    stopBtn.addEventListener('click', async () => {
-      if (!currentJobId) return;
+            updateJobCard(jobId, {
+              progress: status.progress,
+              stepMessage: status.stepMessage || statusMessages[status.status],
+              elapsedSeconds: status.elapsedSeconds,
+              status: status.status,
+              errorMessage: status.errorMessage,
+              downloadable: status.downloadable,
+              usage: status.usage,
+              costUSD: status.costUSD
+            });
 
-      stopBtn.disabled = true;
+            updateSummary();
 
-      try {
-        await fetch(`/api/stop/${currentJobId}`, { method: 'POST' });
-        statusText.textContent = '正在取消...';
-      } catch (error) {
-        console.error('Failed to stop job:', error);
-      }
-    });
-
-    function startPolling() {
-      pollingInterval = setInterval(async () => {
-        if (!currentJobId) return;
-
-        try {
-          const response = await fetch(`/api/status/${currentJobId}`);
-          const status = await response.json();
-
-          updateUI(status);
-
-          if (['done', 'error', 'cancelled'].includes(status.status)) {
-            stopPolling();
-            showResult(status);
+            if (['done', 'error', 'cancelled'].includes(status.status)) {
+              clearInterval(checkInterval);
+              resolve();
+            }
+          } catch (e) {
+            console.error('Poll error:', e);
           }
-        } catch (error) {
-          console.error('Polling error:', error);
-        }
-      }, 1000);
+        }, 1000);
+      });
     }
 
-    function stopPolling() {
-      if (pollingInterval) {
-        clearInterval(pollingInterval);
-        pollingInterval = null;
-      }
-    }
-
-    function updateUI(status) {
-      progressBar.style.width = status.progress + '%';
-      progressPercent.textContent = status.progress + '%';
-      elapsedTime.textContent = `已耗時：${status.elapsedSeconds} 秒`;
-
-      const statusLabel = statusMessages[status.status] || status.status;
-      statusText.textContent = status.stepMessage || statusLabel;
-    }
-
-    function showResult(status) {
-      uploadBtn.disabled = false;
-      stopBtn.style.display = 'none';
-      resultContainer.style.display = 'block';
-
-      if (status.status === 'done' && status.downloadable) {
-        resultContainer.className = 'result-container result-success';
-
-        let html = `
-          <h3 style="color: #2ecc71; margin-top: 0;">翻譯完成！</h3>
-          <a href="/api/download/${currentJobId}" class="download-link">
-            下載翻譯後的 DOCX
-          </a>
-          <div class="usage-info">
-            <h4>使用統計</h4>
-            <div class="usage-row">
-              <span>Prompt Tokens</span>
-              <span>${status.usage.prompt.toLocaleString()}</span>
+    function createJobCard(jobId, fileName) {
+      const card = document.createElement('div');
+      card.className = 'job-card';
+      card.dataset.jobId = jobId;
+      card.innerHTML = `
+        <div class="job-header">
+          <span class="job-filename">${escapeHtml(fileName)}</span>
+          <div class="job-actions">
+            <button class="stop-btn" onclick="stopJob('${jobId}')">停止</button>
+            <a class="download-btn" style="display:none; text-decoration:none; padding:6px 12px;">下載</a>
+          </div>
+        </div>
+        <div class="progress-bar-outer">
+          <div class="progress-bar-inner"></div>
+        </div>
+        <div class="job-info">
+          <span class="job-status">準備中...</span>
+          <span class="job-time">0 秒</span>
+        </div>
+        <div class="error-text" style="display:none;"></div>
+        <div class="job-usage">
+          <div class="usage-grid">
+            <div class="usage-item">
+              <div class="usage-label">Prompt</div>
+              <div class="usage-value prompt-tokens">0</div>
             </div>
-            <div class="usage-row">
-              <span>Completion Tokens</span>
-              <span>${status.usage.completion.toLocaleString()}</span>
+            <div class="usage-item">
+              <div class="usage-label">Completion</div>
+              <div class="usage-value completion-tokens">0</div>
             </div>
-            <div class="usage-row">
-              <span>Reasoning Tokens</span>
-              <span>${status.usage.reasoning.toLocaleString()}</span>
-            </div>
-            <div class="usage-row">
-              <span>總處理時間</span>
-              <span>${status.elapsedSeconds} 秒</span>
-            </div>
-            <div class="usage-row">
-              <span>預估費用</span>
-              <span>USD $${status.costUSD ? status.costUSD.toFixed(4) : '0.0000'}</span>
+            <div class="usage-item">
+              <div class="usage-label">費用</div>
+              <div class="usage-value cost">$0.00</div>
             </div>
           </div>
-        `;
-        resultContent.innerHTML = html;
+        </div>
+      `;
+      return card;
+    }
 
-      } else if (status.status === 'error') {
-        resultContainer.className = 'result-container result-error';
-        resultContent.innerHTML = `
-          <h3 class="error-message">處理失敗</h3>
-          <p>${status.errorMessage || '未知錯誤'}</p>
-        `;
+    function updateJobCard(jobId, data) {
+      const job = jobs.get(jobId);
+      if (!job || !job.element) return;
 
-      } else if (status.status === 'cancelled') {
-        resultContainer.className = 'result-container result-cancelled';
-        resultContent.innerHTML = `
-          <h3 class="cancelled-message">已取消</h3>
-          <p>任務已被取消</p>
-        `;
+      const card = job.element;
+
+      if (data.progress !== undefined) {
+        card.querySelector('.progress-bar-inner').style.width = data.progress + '%';
+      }
+
+      if (data.stepMessage) {
+        card.querySelector('.job-status').textContent = data.stepMessage;
+      }
+
+      if (data.elapsedSeconds !== undefined) {
+        card.querySelector('.job-time').textContent = data.elapsedSeconds + ' 秒';
+      }
+
+      if (data.status) {
+        const statusClass = data.status === 'done' ? 'done'
+          : data.status === 'error' ? 'error'
+          : data.status === 'cancelled' ? 'cancelled'
+          : data.status === 'queued' ? 'queued'
+          : '';
+        card.className = 'job-card ' + statusClass;
+
+        if (['done', 'error', 'cancelled'].includes(data.status)) {
+          card.querySelector('.stop-btn').style.display = 'none';
+        }
+
+        if (data.status === 'done' && data.downloadable) {
+          const downloadBtn = card.querySelector('.download-btn');
+          downloadBtn.style.display = 'inline-block';
+          downloadBtn.href = `/api/download/${jobId}`;
+          job.downloadable = true;
+        }
+
+        if (data.status === 'error' && data.errorMessage) {
+          const errorText = card.querySelector('.error-text');
+          errorText.textContent = data.errorMessage;
+          errorText.style.display = 'block';
+        }
+
+        job.status = data.status;
+      }
+
+      if (data.usage) {
+        const usageDiv = card.querySelector('.job-usage');
+        usageDiv.classList.add('show');
+        usageDiv.querySelector('.prompt-tokens').textContent = data.usage.prompt.toLocaleString();
+        usageDiv.querySelector('.completion-tokens').textContent = data.usage.completion.toLocaleString();
+        job.usage = data.usage;
+      }
+
+      if (data.costUSD !== undefined) {
+        card.querySelector('.cost').textContent = '$' + data.costUSD.toFixed(4);
+        job.costUSD = data.costUSD;
       }
     }
 
-    function showError(message) {
-      uploadBtn.disabled = false;
-      stopBtn.style.display = 'none';
-      progressContainer.style.display = 'none';
-      resultContainer.style.display = 'block';
-      resultContainer.className = 'result-container result-error';
-      resultContent.innerHTML = `
-        <h3 class="error-message">錯誤</h3>
-        <p>${message}</p>
-      `;
+    async function stopJob(jobId) {
+      try {
+        await fetch(`/api/stop/${jobId}`, { method: 'POST' });
+      } catch (e) {
+        console.error('Failed to stop job:', jobId, e);
+      }
     }
+
+    function startPolling() {
+      // Polling is now handled per-job in waitForJobCompletion
+      // This function is kept for compatibility but does minimal work
+      pollingInterval = setInterval(() => {
+        updateSummary();
+        checkAllDone();
+      }, 2000);
+    }
+
+    function checkAllDone() {
+      const activeJobs = Array.from(jobs.values())
+        .filter(job => !['done', 'error', 'cancelled'].includes(job.status));
+
+      if (activeJobs.length === 0 && jobs.size > 0 && !isProcessing) {
+        uploadBtn.disabled = false;
+        stopAllBtn.style.display = 'none';
+
+        // Show download all button if there are completed files
+        const completedCount = Array.from(jobs.values())
+          .filter(job => job.status === 'done' && job.downloadable).length;
+
+        if (completedCount > 1) {
+          downloadAllBtn.style.display = 'inline-block';
+        }
+      }
+    }
+
+    function updateSummary() {
+      const allJobs = Array.from(jobs.values());
+      const total = allJobs.length;
+      const queued = allJobs.filter(j => j.status === 'queued').length;
+      const processing = allJobs.filter(j => !['done', 'error', 'cancelled', 'queued'].includes(j.status)).length;
+      const success = allJobs.filter(j => j.status === 'done').length;
+      const errors = allJobs.filter(j => j.status === 'error' || j.status === 'cancelled').length;
+      const totalCost = allJobs.reduce((sum, j) => sum + (j.costUSD || 0), 0);
+
+      document.getElementById('totalCount').textContent = total;
+      document.getElementById('processingCount').textContent = processing + (queued > 0 ? ` (+${queued})` : '');
+      document.getElementById('successCount').textContent = success;
+      document.getElementById('errorCount').textContent = errors;
+      document.getElementById('totalCost').textContent = '$' + totalCost.toFixed(4);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Expose stopJob to global scope for onclick
+    window.stopJob = stopJob;
   </script>
 </body>
 </html>

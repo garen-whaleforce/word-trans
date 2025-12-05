@@ -11,6 +11,8 @@ export interface DocxSegment {
   id: number;
   text: string;
   translated?: string;
+  // Track the w:t nodes this segment spans
+  wtNodes: any[];
 }
 
 export interface ParsedDocx {
@@ -40,16 +42,52 @@ const builderOptions = {
 };
 
 /**
- * Recursively traverse XML tree and extract text from w:t nodes
+ * Collect all w:t text nodes from a paragraph or run
  */
-function extractSegments(
+function collectWtNodes(node: any, wtNodes: any[]): void {
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      collectWtNodes(item, wtNodes);
+    }
+    return;
+  }
+
+  if (typeof node !== "object" || node === null) {
+    return;
+  }
+
+  // Check if this is a w:t node
+  if ("w:t" in node) {
+    const wtContent = node["w:t"];
+    if (Array.isArray(wtContent)) {
+      for (const item of wtContent) {
+        if (typeof item === "object" && "#text" in item) {
+          wtNodes.push(item);
+        }
+      }
+    }
+    return;
+  }
+
+  // Recurse into child nodes
+  for (const key of Object.keys(node)) {
+    if (key !== ":@" && key !== "#text") {
+      collectWtNodes(node[key], wtNodes);
+    }
+  }
+}
+
+/**
+ * Extract segments by paragraph (w:p) for better context
+ */
+function extractSegmentsByParagraph(
   node: any,
   segments: DocxSegment[],
   counter: { id: number }
 ): void {
   if (Array.isArray(node)) {
     for (const item of node) {
-      extractSegments(item, segments, counter);
+      extractSegmentsByParagraph(item, segments, counter);
     }
     return;
   }
@@ -58,75 +96,52 @@ function extractSegments(
     return;
   }
 
-  // Check if this is a w:t node
-  if ("w:t" in node) {
-    const wtContent = node["w:t"];
-    if (Array.isArray(wtContent)) {
-      for (const item of wtContent) {
-        if (typeof item === "object" && "#text" in item) {
-          const text = String(item["#text"]);
-          if (text.trim()) {
-            segments.push({
-              id: counter.id++,
-              text: text,
-            });
-          }
-        }
+  // Check if this is a w:p (paragraph) node
+  if ("w:p" in node) {
+    const wtNodes: any[] = [];
+    collectWtNodes(node["w:p"], wtNodes);
+
+    if (wtNodes.length > 0) {
+      // Merge all text in this paragraph
+      const mergedText = wtNodes.map((wt) => String(wt["#text"])).join("");
+
+      if (mergedText.trim()) {
+        segments.push({
+          id: counter.id++,
+          text: mergedText,
+          wtNodes: wtNodes,
+        });
       }
     }
+    return; // Don't recurse into paragraph children (already processed)
   }
 
-  // Recurse into child nodes
+  // Recurse into other nodes
   for (const key of Object.keys(node)) {
     if (key !== ":@" && key !== "#text") {
-      extractSegments(node[key], segments, counter);
+      extractSegmentsByParagraph(node[key], segments, counter);
     }
   }
 }
 
 /**
- * Recursively traverse XML tree and replace text in w:t nodes
+ * Distribute translated text back to w:t nodes
  */
-function replaceSegments(
-  node: any,
-  segments: DocxSegment[],
-  counter: { index: number }
-): void {
-  if (Array.isArray(node)) {
-    for (const item of node) {
-      replaceSegments(item, segments, counter);
-    }
+function distributeTranslation(segment: DocxSegment): void {
+  if (!segment.translated || segment.wtNodes.length === 0) {
     return;
   }
 
-  if (typeof node !== "object" || node === null) {
-    return;
-  }
+  const translated = segment.translated;
 
-  // Check if this is a w:t node
-  if ("w:t" in node) {
-    const wtContent = node["w:t"];
-    if (Array.isArray(wtContent)) {
-      for (const item of wtContent) {
-        if (typeof item === "object" && "#text" in item) {
-          const originalText = String(item["#text"]);
-          if (originalText.trim()) {
-            const segment = segments[counter.index];
-            if (segment) {
-              // Use translated text if available, otherwise keep original
-              item["#text"] = segment.translated ?? segment.text;
-              counter.index++;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  // Recurse into child nodes
-  for (const key of Object.keys(node)) {
-    if (key !== ":@" && key !== "#text") {
-      replaceSegments(node[key], segments, counter);
+  if (segment.wtNodes.length === 1) {
+    // Simple case: single w:t node
+    segment.wtNodes[0]["#text"] = translated;
+  } else {
+    // Multiple w:t nodes: put all text in first node, clear others
+    segment.wtNodes[0]["#text"] = translated;
+    for (let i = 1; i < segment.wtNodes.length; i++) {
+      segment.wtNodes[i]["#text"] = "";
     }
   }
 }
@@ -153,12 +168,12 @@ export async function parseDocx(filePath: string): Promise<ParsedDocx> {
   const parser = new XMLParser(parserOptions);
   const documentXml = parser.parse(documentXmlString);
 
-  // Extract text segments
+  // Extract text segments by paragraph
   const segments: DocxSegment[] = [];
   const counter = { id: 0 };
-  extractSegments(documentXml, segments, counter);
+  extractSegmentsByParagraph(documentXml, segments, counter);
 
-  console.log(`Parsed DOCX: found ${segments.length} text segments`);
+  console.log(`Parsed DOCX: found ${segments.length} paragraph segments`);
 
   return {
     zip,
@@ -174,16 +189,14 @@ export async function writeDocx(
   parsed: ParsedDocx,
   outputPath: string
 ): Promise<void> {
-  // Clone the XML structure (deep copy)
-  const documentXmlCopy = JSON.parse(JSON.stringify(parsed.documentXml));
-
-  // Replace text with translations
-  const counter = { index: 0 };
-  replaceSegments(documentXmlCopy, parsed.segments, counter);
+  // Apply translations to the original XML structure
+  for (const segment of parsed.segments) {
+    distributeTranslation(segment);
+  }
 
   // Build XML string
   const builder = new XMLBuilder(builderOptions);
-  const newXmlString = builder.build(documentXmlCopy);
+  const newXmlString = builder.build(parsed.documentXml);
 
   // Update the zip with new document.xml
   parsed.zip.file("word/document.xml", newXmlString);
