@@ -7,12 +7,18 @@ import * as path from "path";
 import JSZip from "jszip";
 import { XMLParser, XMLBuilder } from "fast-xml-parser";
 
+// Track text nodes and their parent run elements
+interface WtNodeInfo {
+  textNode: any;
+  runNode: any | null;
+}
+
 export interface DocxSegment {
   id: number;
   text: string;
   translated?: string;
-  // Track the w:t nodes this segment spans
-  wtNodes: any[];
+  // Track the w:t nodes and their parent runs
+  wtNodeInfos: WtNodeInfo[];
 }
 
 export interface ParsedDocx {
@@ -42,17 +48,24 @@ const builderOptions = {
 };
 
 /**
- * Collect all w:t text nodes from a paragraph or run
+ * Collect all w:t text nodes and their parent w:r (run) nodes
  */
-function collectWtNodes(node: any, wtNodes: any[]): void {
+function collectWtNodes(node: any, wtNodes: WtNodeInfo[], parentRun: any | null = null): void {
   if (Array.isArray(node)) {
     for (const item of node) {
-      collectWtNodes(item, wtNodes);
+      collectWtNodes(item, wtNodes, parentRun);
     }
     return;
   }
 
   if (typeof node !== "object" || node === null) {
+    return;
+  }
+
+  // Check if this is a w:r (run) node
+  if ("w:r" in node) {
+    // Recurse into run with this as the parent
+    collectWtNodes(node["w:r"], wtNodes, node);
     return;
   }
 
@@ -62,7 +75,7 @@ function collectWtNodes(node: any, wtNodes: any[]): void {
     if (Array.isArray(wtContent)) {
       for (const item of wtContent) {
         if (typeof item === "object" && "#text" in item) {
-          wtNodes.push(item);
+          wtNodes.push({ textNode: item, runNode: parentRun });
         }
       }
     }
@@ -72,7 +85,7 @@ function collectWtNodes(node: any, wtNodes: any[]): void {
   // Recurse into child nodes
   for (const key of Object.keys(node)) {
     if (key !== ":@" && key !== "#text") {
-      collectWtNodes(node[key], wtNodes);
+      collectWtNodes(node[key], wtNodes, parentRun);
     }
   }
 }
@@ -98,18 +111,18 @@ function extractSegmentsByParagraph(
 
   // Check if this is a w:p (paragraph) node
   if ("w:p" in node) {
-    const wtNodes: any[] = [];
-    collectWtNodes(node["w:p"], wtNodes);
+    const wtNodeInfos: WtNodeInfo[] = [];
+    collectWtNodes(node["w:p"], wtNodeInfos);
 
-    if (wtNodes.length > 0) {
+    if (wtNodeInfos.length > 0) {
       // Merge all text in this paragraph
-      const mergedText = wtNodes.map((wt) => String(wt["#text"])).join("");
+      const mergedText = wtNodeInfos.map((info) => String(info.textNode["#text"])).join("");
 
       if (mergedText.trim()) {
         segments.push({
           id: counter.id++,
           text: mergedText,
-          wtNodes: wtNodes,
+          wtNodeInfos: wtNodeInfos,
         });
       }
     }
@@ -125,23 +138,81 @@ function extractSegmentsByParagraph(
 }
 
 /**
+ * Remove w:spacing from run properties to allow text to reflow naturally
+ */
+function clearRunSpacing(runNode: any): void {
+  if (!runNode || !runNode["w:r"]) return;
+
+  const runContent = runNode["w:r"];
+  if (!Array.isArray(runContent)) return;
+
+  for (const item of runContent) {
+    if (item && "w:rPr" in item) {
+      const rPr = item["w:rPr"];
+      if (Array.isArray(rPr)) {
+        // Remove w:spacing elements from run properties
+        for (let i = rPr.length - 1; i >= 0; i--) {
+          if (rPr[i] && "w:spacing" in rPr[i]) {
+            rPr.splice(i, 1);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
  * Distribute translated text back to w:t nodes
+ * Strategy: Put all text in first non-empty node, clear others,
+ * and remove fixed spacing from runs to allow natural text flow
  */
 function distributeTranslation(segment: DocxSegment): void {
-  if (!segment.translated || segment.wtNodes.length === 0) {
+  if (!segment.translated || segment.wtNodeInfos.length === 0) {
     return;
   }
 
   const translated = segment.translated;
+  const infos = segment.wtNodeInfos;
 
-  if (segment.wtNodes.length === 1) {
+  // Clear spacing from all runs that will be modified
+  for (const info of infos) {
+    if (info.runNode) {
+      clearRunSpacing(info.runNode);
+    }
+  }
+
+  if (infos.length === 1) {
     // Simple case: single w:t node
-    segment.wtNodes[0]["#text"] = translated;
-  } else {
-    // Multiple w:t nodes: put all text in first node, clear others
-    segment.wtNodes[0]["#text"] = translated;
-    for (let i = 1; i < segment.wtNodes.length; i++) {
-      segment.wtNodes[i]["#text"] = "";
+    infos[0].textNode["#text"] = translated;
+    return;
+  }
+
+  // Check if any nodes are whitespace-only (important for table spacing)
+  const nodeAnalysis = infos.map((info) => {
+    const text = String(info.textNode["#text"]);
+    return {
+      info,
+      text,
+      isWhitespaceOnly: /^\s*$/.test(text),
+    };
+  });
+
+  // Find the first non-whitespace node to put the translation
+  const firstContentIndex = nodeAnalysis.findIndex((n) => !n.isWhitespaceOnly);
+
+  if (firstContentIndex === -1) {
+    // All nodes are whitespace - put translation in first node
+    infos[0].textNode["#text"] = translated;
+    return;
+  }
+
+  // Put translation in the first content node
+  infos[firstContentIndex].textNode["#text"] = translated;
+
+  // Clear other content nodes, but preserve whitespace nodes
+  for (let i = 0; i < infos.length; i++) {
+    if (i !== firstContentIndex && !nodeAnalysis[i].isWhitespaceOnly) {
+      infos[i].textNode["#text"] = "";
     }
   }
 }
